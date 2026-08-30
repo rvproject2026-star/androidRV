@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>androidRV - Remote Control Panel</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background-color: #1e293b;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #334155;
+        }
+        h2 { 
+            margin-bottom: 0.5rem; 
+            color: #38bdf8; 
+            font-size: 24px;
+        }
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 1.5rem;
+        }
+        .input-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+        label {
+            font-size: 12px;
+            color: #cbd5e1;
+            display: block;
+            margin-bottom: 4px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: #0f172a;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #38bdf8;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-lock { 
+            background-color: #ef4444; 
+            color: white; 
+        }
+        .btn-lock:hover { 
+            background-color: #dc2626; 
+        }
+        .btn-unlock { 
+            background-color: #22c55e; 
+            color: white; 
+        }
+        .btn-unlock:hover { 
+            background-color: #16a34a; 
+        }
+        #statusText { 
+            margin-top: 1.2rem; 
+            font-size: 13px; 
+            color: #38bdf8;
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed #334155;
+        }
+    </style>
+
+    <!-- SDK Firebase Realtime Database via CDN -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        // Configuration milik proyek androidrv-c40ca
+        const firebaseConfig = {
+            apiKey: "AIzaSyCxyL4ENMpTFUtZ-vYsH14PoFQiY8I-Bb8",
+            authDomain: "androidrv-c40ca.firebaseapp.com",
+            databaseURL: "https://androidrv-c40ca-default-rtdb.firebaseio.com",
+            projectId: "androidrv-c40ca",
+            storageBucket: "androidrv-c40ca.firebasestorage.app",
+            messagingSenderId: "738598900581",
+            appId: "1:738598900581:web:22d42c59f2bb0d5050878c",
+            measurementId: "G-0C2WJ21YXP"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Fungsi Mengunci HP
+        window.lockDevice = function() {
+            const deviceId = document.getElementById('deviceIdInput').value.trim();
+            if (!deviceId) {
+                alert("Harap masukkan Device ID!");
+                return;
+            }
+
+            set(ref(database, 'devices/' + deviceId + '/status'), 'EXPIRE_AND_LOCK')
+                .then(() => {
+                    document.getElementById('statusText').innerText = "Status [" + deviceId + "]: LOCKED (Video Diputar)";
+                })
+                .catch((error) => {
+                    alert("Gagal: " + error.message);
+                });
+        };
+
+        // Fungsi Membuka Kunci HP
+        window.unlockDevice = function() {
+            const deviceId = document.getElementById('deviceIdInput').value.trim();
+            if (!deviceId) {
+                alert("Harap masukkan Device ID!");
+                return;
+            }
+
+            set(ref(database, 'devices/' + deviceId + '/status'), 'UNLOCKED')
+                .then(() => {
+                    document.getElementById('statusText').innerText = "Status [" + deviceId + "]: UNLOCKED (Normal)";
+                })
+                .catch((error) => {
+                    alert("Gagal: " + error.message);
+                });
+        };
+    </script>
+</head>
+<body>
+
+    <div class="card">
+        <h2>androidRV</h2>
+        <p class="subtitle">Panel Kontrol Masa Sewa Perangkat</p>
+
+        <div class="input-group">
+            <label for="deviceIdInput">TARGET DEVICE ID</label>
+            <input type="text" id="deviceIdInput" value="hp_sewa_01" placeholder="Masukkan ID HP">
+        </div>
+
+        <button class="btn btn-lock" onclick="lockDevice()">🔒 KUNCI & PUTAR VIDEO</button>
+        <button class="btn btn-unlock" onclick="unlockDevice()">🔓 BUKA KUNCI HP</button>
+
+        <div id="statusText">Status: Siap Menghubungkan...</div>
+    </div>
+
+</body>
+</html>
