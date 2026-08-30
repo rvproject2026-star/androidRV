@@ -3,176 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>androidRV - Remote Control Panel</title>
+    <title>Kontrol Sewa HP - androidRV</title>
+    
+    <!-- SDK Firebase JS (v9 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f172a;
-            color: #ffffff;
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            height: 100vh;
+            margin: 0;
         }
         .card {
-            background-color: #1e293b;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #334155;
+            width: 320px;
         }
-        h2 { 
-            margin-bottom: 0.5rem; 
-            color: #38bdf8; 
-            font-size: 24px;
-        }
-        p.subtitle {
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 1.5rem;
-        }
-        .input-group {
-            margin-bottom: 1.2rem;
-            text-align: left;
-        }
-        label {
-            font-size: 12px;
-            color: #cbd5e1;
-            display: block;
-            margin-bottom: 4px;
-        }
-        input {
-            width: 100%;
-            padding: 10px 12px;
+        h2 { margin-bottom: 5px; color: #333; }
+        p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        .status-box {
+            padding: 12px;
             border-radius: 8px;
-            border: 1px solid #475569;
-            background-color: #0f172a;
-            color: white;
-            font-size: 14px;
-            outline: none;
+            font-weight: bold;
+            margin-bottom: 25px;
+            font-size: 16px;
         }
-        input:focus {
-            border-color: #38bdf8;
-        }
+        .status-unlocked { background-color: #d4edda; color: #155724; }
+        .status-locked { background-color: #f8d7da; color: #721c24; }
         .btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             margin: 8px 0;
             border: none;
             border-radius: 8px;
+            font-size: 16px;
             font-weight: bold;
-            font-size: 15px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: 0.2s;
         }
-        .btn-lock { 
-            background-color: #ef4444; 
-            color: white; 
-        }
-        .btn-lock:hover { 
-            background-color: #dc2626; 
-        }
-        .btn-unlock { 
-            background-color: #22c55e; 
-            color: white; 
-        }
-        .btn-unlock:hover { 
-            background-color: #16a34a; 
-        }
-        #statusText { 
-            margin-top: 1.2rem; 
-            font-size: 13px; 
-            color: #38bdf8;
-            background: #0f172a;
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px dashed #334155;
-        }
+        .btn-lock { background-color: #dc3545; color: white; }
+        .btn-lock:hover { background-color: #c82333; }
+        .btn-unlock { background-color: #28a745; color: white; }
+        .btn-unlock:hover { background-color: #218838; }
     </style>
-
-    <!-- SDK Firebase Realtime Database via CDN (Versi CDN Standar Agar Langsung Bekerja) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <script>
-        // Configuration milik proyek androidrv-c40ca
-        const firebaseConfig = {
-            apiKey: "AIzaSyCxyL4ENMpTFUtZ-vYsH14PoFQiY8I-Bb8",
-            authDomain: "androidrv-c40ca.firebaseapp.com",
-            databaseURL: "https://androidrv-c40ca-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "androidrv-c40ca",
-            storageBucket: "androidrv-c40ca.firebasestorage.app",
-            messagingSenderId: "738598900581",
-            appId: "1:738598900581:web:22d42c59f2bb0d5050878c",
-            measurementId: "G-0C2WJ21YXP"
-        };
-
-        // Inisialisasi Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const database = firebase.database();
-
-        // Fungsi Mengunci HP
-        function lockDevice() {
-            const deviceId = document.getElementById('deviceIdInput').value.trim();
-            if (!deviceId) {
-                alert("Harap masukkan Device ID!");
-                return;
-            }
-
-            database.ref('devices/' + deviceId + '/status').set('EXPIRE_AND_LOCK')
-                .then(() => {
-                    document.getElementById('statusText').innerText = "Status [" + deviceId + "]: LOCKED (Video Diputar)";
-                })
-                .catch((error) => {
-                    alert("Gagal: " + error.message);
-                });
-        }
-
-        // Fungsi Membuka Kunci HP
-        function unlockDevice() {
-            const deviceId = document.getElementById('deviceIdInput').value.trim();
-            if (!deviceId) {
-                alert("Harap masukkan Device ID!");
-                return;
-            }
-
-            database.ref('devices/' + deviceId + '/status').set('UNLOCKED')
-                .then(() => {
-                    document.getElementById('statusText').innerText = "Status [" + deviceId + "]: UNLOCKED (Normal)";
-                })
-                .catch((error) => {
-                    alert("Gagal: " + error.message);
-                });
-        }
-    </script>
 </head>
 <body>
 
-    <div class="card">
-        <h2>androidRV</h2>
-        <p class="subtitle">Panel Kontrol Masa Sewa Perangkat</p>
+<div class="card">
+    <h2>Remote Kontrol HP</h2>
+    <p>ID Perangkat: <strong id="device-id">hp_sewa_01</strong></p>
 
-        <div class="input-group">
-            <label for="deviceIdInput">TARGET DEVICE ID</label>
-            <input type="text" id="deviceIdInput" value="hp_sewa_01" placeholder="Masukkan ID HP">
-        </div>
-
-        <button class="btn btn-lock" onclick="lockDevice()">🔒 KUNCI & PUTAR VIDEO</button>
-        <button class="btn btn-unlock" onclick="unlockDevice()">🔓 BUKA KUNCI HP</button>
-
-        <div id="statusText">Status: Siap Menghubungkan...</div>
+    <div id="status-display" class="status-box status-unlocked">
+        Status: Memuat...
     </div>
+
+    <button class="btn btn-lock" onclick="setStatus('EXPIRE_AND_LOCK')">KUNCI HP (Video ON)</button>
+    <button class="btn btn-unlock" onclick="setStatus('UNLOCKED')">BUKA KUNCI HP</button>
+</div>
+
+<script>
+    // Konfigurasi Firebase milikmu
+    const firebaseConfig = {
+        apiKey: "AIzaSyCxyL4ENMpTFUtZ-vYsH14PoFQiY8I-Bb8",
+        authDomain: "androidrv-c40ca.firebaseapp.com",
+        databaseURL: "https://androidrv-c40ca-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "androidrv-c40ca",
+        storageBucket: "androidrv-c40ca.firebasestorage.app",
+        messagingSenderId: "738598900581",
+        appId: "1:738598900581:web:22d42c59f2bb0d5050878c",
+        measurementId: "G-0C2WJ21YXP"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    const deviceId = "hp_sewa_01";
+    const statusRef = database.ref("devices/" + deviceId + "/status");
+
+    // Pantau Perubahan Status Realtime dari Firebase
+    statusRef.on("value", (snapshot) => {
+        const status = snapshot.val();
+        const statusDisplay = document.getElementById("status-display");
+
+        if (status === "EXPIRE_AND_LOCK") {
+            statusDisplay.innerText = "Status: TERKUNCI (Kiosk Active)";
+            statusDisplay.className = "status-box status-locked";
+        } else if (status === "UNLOCKED") {
+            statusDisplay.innerText = "Status: TERBUKA (Normal)";
+            statusDisplay.className = "status-box status-unlocked";
+        } else {
+            statusDisplay.innerText = "Status: Belum Diatur";
+        }
+    });
+
+    // Fungsi Pengubah Status
+    function setStatus(newStatus) {
+        statusRef.set(newStatus)
+            .then(() => {
+                console.log("Status berhasil diperbarui ke: " + newStatus);
+            })
+            .catch((error) => {
+                alert("Gagal memperbarui status: " + error.message);
+            });
+    }
+</script>
 
 </body>
 </html>
