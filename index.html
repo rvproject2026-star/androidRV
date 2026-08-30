@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kontrol Sewa HP - androidRV</title>
+    <title>Terminal Kontrol Sewa - androidRV</title>
     
     <!-- SDK Firebase JS (v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -11,62 +11,126 @@
 
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #050505;
+            color: #00ff66;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
         }
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 320px;
+        .container {
+            width: 380px;
+            background: #0a0a0a;
+            border: 2px solid #00ff66;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            padding: 25px;
+            box-sizing: border-box;
         }
-        h2 { margin-bottom: 5px; color: #333; }
-        p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        h2 {
+            text-align: center;
+            color: #00ff66;
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 20px;
+            border-bottom: 1px dashed #00ff66;
+            padding-bottom: 10px;
+        }
+        .info-panel {
+            background: #111;
+            border: 1px solid #005522;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+        .label { color: #88ffbb; }
+        .value { color: #00ff66; font-weight: bold; }
+        
         .status-box {
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: bold;
-            margin-bottom: 25px;
-            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            letter-spacing: 1px;
         }
-        .status-unlocked { background-color: #d4edda; color: #155724; }
-        .status-locked { background-color: #f8d7da; color: #721c24; }
+        .status-unlocked { background-color: #00220a; color: #00ff66; border: 1px solid #00ff66; }
+        .status-locked { background-color: #330000; color: #ff3333; border: 1px solid #ff3333; }
+
         .btn {
             width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 12px;
+            margin: 6px 0;
+            border: 1px solid;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
             cursor: pointer;
             transition: 0.2s;
+            text-transform: uppercase;
         }
-        .btn-lock { background-color: #dc3545; color: white; }
-        .btn-lock:hover { background-color: #c82333; }
-        .btn-unlock { background-color: #28a745; color: white; }
-        .btn-unlock:hover { background-color: #218838; }
+        .btn-lock { background-color: #220000; color: #ff3333; border-color: #ff3333; }
+        .btn-lock:hover { background-color: #ff3333; color: #000; }
+        
+        .btn-unlock { background-color: #00220a; color: #00ff66; border-color: #00ff66; }
+        .btn-unlock:hover { background-color: #00ff66; color: #000; }
+
+        .log-box {
+            margin-top: 15px;
+            background: #000;
+            border: 1px dashed #005522;
+            padding: 8px;
+            font-size: 11px;
+            color: #00aa44;
+            height: 50px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Remote Kontrol HP</h2>
-    <p>ID Perangkat: <strong id="device-id">hp_sewa_01</strong></p>
-
-    <div id="status-display" class="status-box status-unlocked">
-        Status: Memuat...
+<div class="container">
+    <h2>// كن فيكن</h2>
+    
+    <div class="info-panel">
+        <div class="info-row">
+            <span class="label">Target ID:</span>
+            <span class="value" id="device-id">hp_sewa_01</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Koneksi DB:</span>
+            <span class="value" style="color: #00ff66;">ONLINE</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Aksesibilitas:</span>
+            <span class="value" style="color: #ffcc00;">TERMONITOR</span>
+        </div>
     </div>
 
-    <button class="btn btn-lock" onclick="setStatus('EXPIRE_AND_LOCK')">KUNCI HP (Video ON)</button>
-    <button class="btn btn-unlock" onclick="setStatus('UNLOCKED')">BUKA KUNCI HP</button>
+    <div id="status-display" class="status-box status-unlocked">
+        STATUS: MEMUAT...
+    </div>
+
+    <button class="btn btn-lock" onclick="setStatus('EXPIRE_AND_LOCK')">[!] EKSEKUSI</button>
+    <button class="btn btn-unlock" onclick="setStatus('UNLOCKED')">[✓] BUKA KUNCI PERANGKAT</button>
+
+    <div class="log-box" id="log-terminal">
+        > Sistem siap mengirim perintah sinyal...
+    </div>
 </div>
 
 <script>
@@ -88,6 +152,7 @@
     
     const deviceId = "hp_sewa_01";
     const statusRef = database.ref("devices/" + deviceId + "/status");
+    const logTerminal = document.getElementById("log-terminal");
 
     // Pantau perubahan status secara realtime
     statusRef.on("value", (snapshot) => {
@@ -95,25 +160,30 @@
         const statusDisplay = document.getElementById("status-display");
 
         if (status === "EXPIRE_AND_LOCK") {
-            statusDisplay.innerText = "Status: TERKUNCI (Kiosk Active)";
+            statusDisplay.innerText = "STATUS: TERKUNCI (ACTIVE)";
             statusDisplay.className = "status-box status-locked";
+            logTerminal.innerHTML += "<br>> Perintah KUNCI aktif di database.";
         } else if (status === "UNLOCKED") {
-            statusDisplay.innerText = "Status: TERBUKA (Normal)";
+            statusDisplay.innerText = "STATUS: NORMAL (UNLOCKED)";
             statusDisplay.className = "status-box status-unlocked";
+            logTerminal.innerHTML += "<br>> Perintah BUKA KUNCI aktif.";
         } else {
-            statusDisplay.innerText = "Status: Belum Diatur";
+            statusDisplay.innerText = "STATUS: TIDAK DIKETAHUI";
         }
+        logTerminal.scrollTop = logTerminal.scrollHeight;
     });
 
     // Fungsi untuk mengubah status lewat tombol website
     function setStatus(newStatus) {
+        logTerminal.innerHTML += `<br>> Mengirim sinyal: ${newStatus}...`;
         statusRef.set(newStatus)
             .then(() => {
-                console.log("Status berhasil diperbarui ke: " + newStatus);
+                logTerminal.innerHTML += `<br>> Berhasil dikirim ke server.`;
             })
             .catch((error) => {
-                alert("Gagal memperbarui status: " + error.message);
+                logTerminal.innerHTML += `<br>> Gagal: ${error.message}`;
             });
+        logTerminal.scrollTop = logTerminal.scrollHeight;
     }
 </script>
 
