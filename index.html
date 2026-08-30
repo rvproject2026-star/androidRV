@@ -8,6 +8,7 @@
     <!-- SDK Firebase JS (v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <style>
         body {
@@ -89,6 +90,9 @@
         .btn-unlock { background-color: #00220a; color: #00ff66; border-color: #00ff66; }
         .btn-unlock:hover { background-color: #00ff66; color: #000; }
 
+        .btn-logout { background-color: #111; color: #88ffbb; border-color: #005522; margin-top: 15px; }
+        .btn-logout:hover { background-color: #005522; color: #fff; }
+
         .log-box {
             margin-top: 15px;
             background: #000;
@@ -99,37 +103,76 @@
             height: 50px;
             overflow-y: auto;
         }
+
+        .input-field {
+            width: 100%;
+            background: #000;
+            border: 1px solid #005522;
+            color: #00ff66;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .input-field:focus {
+            border-color: #00ff66;
+            outline: none;
+        }
+        .btn-login {
+            background-color: #00220a;
+            color: #00ff66;
+            border-color: #00ff66;
+        }
+        .btn-login:hover {
+            background-color: #00ff66;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>// كن فيكن</h2>
-    
-    <div class="info-panel">
-        <div class="info-row">
-            <span class="label">Target ID:</span>
-            <span class="value" id="device-id">hp_sewa_01</span>
-        </div>
-        <div class="info-row">
-            <span class="label">Koneksi DB:</span>
-            <span class="value" style="color: #00ff66;">ONLINE</span>
-        </div>
-        <div class="info-row">
-            <span class="label">Aksesibilitas:</span>
-            <span class="value" style="color: #ffcc00;">TERMONITOR</span>
-        </div>
+    <!-- Form Login Admin -->
+    <div id="login-section" style="display: none;">
+        <h2>// Autentikasi</h2>
+        <div style="margin-bottom: 15px; font-size: 12px; color: #88ffbb;">Masukkan kredensial akses admin:</div>
+        <input type="email" id="login-email" class="input-field" placeholder="Email Admin">
+        <input type="password" id="login-password" class="input-field" placeholder="Password">
+        <button class="btn btn-login" onclick="handleLogin()">[>] MASUK TERMINAL</button>
+        <div id="login-error" style="color: #ff3333; font-size: 11px; margin-top: 10px; text-align: center;"></div>
     </div>
 
-    <div id="status-display" class="status-box status-unlocked">
-        STATUS: MEMUAT...
-    </div>
+    <!-- Panel Kontrol Utama -->
+    <div id="control-section" style="display: none;">
+        <h2>// Terminal Kontrol</h2>
+        
+        <div class="info-panel">
+            <div class="info-row">
+                <span class="label">Target ID:</span>
+                <span class="value" id="device-id">hp_sewa_01</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Koneksi DB:</span>
+                <span class="value" style="color: #00ff66;">ONLINE</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Aksesibilitas:</span>
+                <span class="value" style="color: #ffcc00;">TERMONITOR</span>
+            </div>
+        </div>
 
-    <button class="btn btn-lock" onclick="setStatus('EXPIRE_AND_LOCK')">[!] EKSEKUSI</button>
-    <button class="btn btn-unlock" onclick="setStatus('UNLOCKED')">[✓] BUKA KUNCI PERANGKAT</button>
+        <div id="status-display" class="status-box status-unlocked">
+            STATUS: MEMUAT...
+        </div>
 
-    <div class="log-box" id="log-terminal">
-        > Sistem siap mengirim perintah sinyal...
+        <button class="btn btn-lock" onclick="setStatus('EXPIRE_AND_LOCK')">[!] KUNCI PERANGKAT</button>
+        <button class="btn btn-unlock" onclick="setStatus('UNLOCKED')">[✓] BUKA KUNCI PERANGKAT</button>
+        <button class="btn btn-logout" onclick="handleLogout()">[x] KELUAR SESI</button>
+
+        <div class="log-box" id="log-terminal">
+            > Sistem siap mengirim perintah sinyal...
+        </div>
     </div>
 </div>
 
@@ -149,29 +192,67 @@
     // Inisialisasi Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const auth = firebase.auth();
     
     const deviceId = "hp_sewa_01";
     const statusRef = database.ref("devices/" + deviceId + "/status");
     const logTerminal = document.getElementById("log-terminal");
 
-    // Pantau perubahan status secara realtime
-    statusRef.on("value", (snapshot) => {
-        const status = snapshot.val();
-        const statusDisplay = document.getElementById("status-display");
+    const loginSection = document.getElementById("login-section");
+    const controlSection = document.getElementById("control-section");
+    const loginError = document.getElementById("login-error");
 
-        if (status === "EXPIRE_AND_LOCK") {
-            statusDisplay.innerText = "STATUS: TERKUNCI (ACTIVE)";
-            statusDisplay.className = "status-box status-locked";
-            logTerminal.innerHTML += "<br>> Perintah KUNCI aktif di database.";
-        } else if (status === "UNLOCKED") {
-            statusDisplay.innerText = "STATUS: NORMAL (UNLOCKED)";
-            statusDisplay.className = "status-box status-unlocked";
-            logTerminal.innerHTML += "<br>> Perintah BUKA KUNCI aktif.";
+    // Pantau status login secara realtime
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            loginSection.style.display = "none";
+            controlSection.style.display = "block";
+            initControlPanel();
         } else {
-            statusDisplay.innerText = "STATUS: TIDAK DIKETAHUI";
+            loginSection.style.display = "block";
+            controlSection.style.display = "none";
         }
-        logTerminal.scrollTop = logTerminal.scrollHeight;
     });
+
+    // Fungsi tombol login
+    function handleLogin() {
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+        loginError.innerText = "";
+
+        auth.signInWithEmailAndPassword(email, password)
+            .catch((error) => {
+                loginError.innerText = "Gagal: " + error.message;
+            });
+    }
+
+    // Fungsi tombol logout
+    function handleLogout() {
+        auth.signOut().catch((error) => {
+            alert("Gagal keluar: " + error.message);
+        });
+    }
+
+    // Inisialisasi Database Listener setelah berhasil login
+    function initControlPanel() {
+        statusRef.on("value", (snapshot) => {
+            const status = snapshot.val();
+            const statusDisplay = document.getElementById("status-display");
+
+            if (status === "EXPIRE_AND_LOCK") {
+                statusDisplay.innerText = "STATUS: TERKUNCI (ACTIVE)";
+                statusDisplay.className = "status-box status-locked";
+                logTerminal.innerHTML += "<br>> Perintah KUNCI aktif di database.";
+            } else if (status === "UNLOCKED") {
+                statusDisplay.innerText = "STATUS: NORMAL (UNLOCKED)";
+                statusDisplay.className = "status-box status-unlocked";
+                logTerminal.innerHTML += "<br>> Perintah BUKA KUNCI aktif.";
+            } else {
+                statusDisplay.innerText = "STATUS: TIDAK DIKETAHUI";
+            }
+            logTerminal.scrollTop = logTerminal.scrollHeight;
+        });
+    }
 
     // Fungsi untuk mengubah status lewat tombol website
     function setStatus(newStatus) {
